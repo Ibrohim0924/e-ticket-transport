@@ -4,9 +4,8 @@ import { updateValidator, createValidator } from '../validation/admin.validation
 import { Crypto } from '../utils/encrypt-dcrypt.js'
 import Admin  from '../models/admin.model.js'
 import { isValidObjectId } from 'mongoose'
-import { hash } from 'bcrypt'
 
-const crypto = new Crypto
+const crypto = new Crypto()
 
 export class AdminController {
     async creatAdmin(req, res){
