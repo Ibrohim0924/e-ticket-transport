@@ -1,4 +1,5 @@
 import { connect } from "mongoose";
+import config from "../config/index.js";
 
 export const ConnectDB = async () => {
     try {

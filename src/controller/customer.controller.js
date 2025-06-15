@@ -13,11 +13,11 @@ export class CustomerController {
             if(error){
                 return resError(res, error, 422)
             }
-            const existsNumber = await Customer.findOne({message: value.phoneNumber})
+            const existsNumber = await Customer.findOne({phoneNumber: value.phoneNumber})
             if(existsNumber){
                 return resError(res, 'This phone number already registred', 409)
             }
-            const existsEmail = await Customer.findOne({ message: value.email })
+            const existsEmail = await Customer.findOne({ email: value.email })
             if(existsEmail){
                 return resError(res, 'This email already taken', 409)
             }

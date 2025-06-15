@@ -9,7 +9,6 @@ import customerRouter from './routes/customer.route.js'
 import cookieparser from 'cookie-parser'
 
 
-
 const app = express()
 
 await ConnectDB()
