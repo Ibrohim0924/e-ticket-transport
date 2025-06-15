@@ -4,8 +4,8 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-   "dev": "nodemon src/main.js",
-   "superadmin": "node src/db/create-superadmin.js"
+    "dev": "nodemon src/main.js",
+    "superadmin": "node src/db/create-superadmin.js"
   },
   "keywords": [],
   "author": "",
@@ -13,9 +13,12 @@
   "description": "",
   "dependencies": {
     "bcrypt": "^6.0.0",
+    "cookie": "^1.0.2",
+    "cookie-parser": "^1.4.7",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "joi": "^17.13.3",
+    "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.15.1",
     "nodemon": "^3.1.10"
   }

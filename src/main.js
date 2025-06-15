@@ -1,26 +1,30 @@
 import express from 'express'
-import { config } from "dotenv";
+import config from './config/index.js';
 import { ConnectDB } from './db/index.js';
 import { creatSuperadmin } from './db/create-superadmin.js';
 import adminRouter from './routes/admin.route.js'
 import transportRouter from './routes/transport.route.js'
 import ticketRouter from './routes/ticket.route.js'
-config()
+import customerRouter from './routes/customer.route.js'
+import cookieparser from 'cookie-parser'
+
 
 
 const app = express()
-const PORT = Number(process.env.PORT)
 
 await ConnectDB()
 await creatSuperadmin()
+
+app.use(cookieparser())
 
 app.use(express.json())
 
 app.use('/admin', adminRouter)
 app.use('/transport', transportRouter)
 app.use('/ticket', ticketRouter)
+app.use('/customer', customerRouter)
 
 
-app.listen(PORT, () => {
-    console.log('server running on port', PORT) 
+app.listen(config.PORT, () => {
+    console.log('server running on port', +config.PORT) 
 })
