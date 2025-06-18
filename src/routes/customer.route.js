@@ -5,6 +5,8 @@ const router = Router()
 const controller = new CustomerController()
 
 router 
-    .post('/', controller.SignUp)
+    .post('/signup', controller.SignUp)
+    .post('/signin', controller.SignIn)
+    .post('/confirm-signin', controller.confirmSignIn)
 
 export default router
