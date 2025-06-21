@@ -16,9 +16,16 @@ export const updateCustomerValidator = (data) => {
     return customer.validate(data)
 }
 
-export const SignInCustomerValidator = (data) => {
+export const SignInEmailCustomerValidator = (data) => {
     const customer = Joi.object({
         email: Joi.string().email().required()
+    })
+    return customer.validate(data)
+}
+
+export const SignInNumberCustomerValidator = (data) => {
+    const customer = Joi.object({
+        phoneNumber: Joi.string().regex(/^\+998[-\s]?\(?\d{2}\)?[-\s]?\d{3}[-\s]?\d{2}[-\s]?\d{2}$/).required()
     })
     return customer.validate(data)
 }

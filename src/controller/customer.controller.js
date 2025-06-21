@@ -1,12 +1,13 @@
 import Customer from "../models/customer.model.js";
 import { resError } from "../helper/error-res.js";
 import { resSuccess } from "../helper/success-res.js";
-import { SignInCustomerValidator, updateCustomerValidator, SignUpCustomerValidator, ConfirmSignInCustomerValidator } from "../validation/customer.validation.js";
+import { SignInEmailCustomerValidator, updateCustomerValidator,SignInNumberCustomerValidator, SignUpCustomerValidator, ConfirmSignInCustomerValidator } from "../validation/customer.validation.js";
 import { Token } from "../utils/token-service.js";
 import config from "../config/index.js";
 import { generateOTP } from "../helper/generate-otp.js"; 
 import NodeCache from "node-cache";
 import { transporter } from "../helper/sendMail.js";
+import {sendSMS} from '../helper/sendSMS.js'
  
 const cache = new NodeCache()
 const token = new Token()
@@ -44,9 +45,9 @@ export class CustomerController {
         }
     }
 
-    async SignIn(req, res){
+    async SignInEmailCustomer(req, res){
         try {
-            const { value, error } = SignInCustomerValidator(req.body)
+            const { value, error } = SignInEmailCustomerValidator(req.body)
             if(error){
                 return resError(res, error, 422)
             }
@@ -79,7 +80,50 @@ export class CustomerController {
             return resError(res, error)
         }
     }
-     
+    
+    // async SignInPhoneCustomer(req, res){
+    //     try {
+    //         const {value, error} = SignInNumberCustomerValidator(req.body)
+    //         if(error){
+    //             return resError(res, error)
+    //         }
+    //         const customer = await Customer.findOne({phoneNumber: value.phoneNumber})
+    //         if(!customer){
+    //             return resError(res, 'Customer not found', 404)
+    //         }
+    //         const otp = generateOTP()
+    //         cache.set(value.phoneNumber, otp, 120)
+    //         await sendSMS(value.phoneNumber, otp)
+    //         return resSuccess(res, {})
+    //     } catch (error) {
+    //         return resError(res, error)
+    //     }
+    // }
+
+    async newAccessToken(req, res){
+        try {
+            const refreshToken = req.cookies?.refreshTokenCustomer
+            if(!refreshToken){
+                return resError(res, 'Refresh token expired', 400)
+            }
+            const decodedToken = await token.verifyToken(refreshToken, config.REFRESH_TOKEN_KEY)
+            if(!decodedToken){
+                return resError(res, 'Invalid token', 400)
+            }
+            const customer = await Customer.findOne({_id: decodedToken.id})
+            if(!customer){
+                return resError(res, 'Customer not found', 404)
+            }
+            const payload = { id: customer._id}
+            const accessToken = await token.generateAccessToken(payload)
+            return resSuccess(res, {
+                token: accessToken
+            })
+        } catch (error) {
+            return resError(res, error)
+        }
+    }
+
     async confirmSignIn(req, res){
         try {
             const {value, error} = ConfirmSignInCustomerValidator(req.body)
@@ -107,6 +151,27 @@ export class CustomerController {
                 token: accessToken
             }, 201);
         } catch (error) { 
+            return resError(res, error)
+        }
+    }
+
+    async logOut(req, res){
+        try {
+            const refreshToken = req.cookies?.refreshTokenCustomer
+            if(!refreshToken){
+                return resError(res, 'Refresh Token expired', 400)
+            }
+            const decodedToken = await token.verifyToken(refreshToken, config.REFRESH_TOKEN_KEY)
+            if(!decodedToken){
+                return resError(res, 'Invalid token', 400)
+            }
+            const customer = await Customer.findOne({ _id: decodedToken.id})
+            if(!customer){
+                return resError(res, 'Customer not found', 404)
+            }
+            res.clearCookie('refreshTokenCustomer')
+            return resSuccess(res, {})
+        } catch (error) {
             return resError(res, error)
         }
     }
