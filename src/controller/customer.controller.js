@@ -81,25 +81,6 @@ export class CustomerController {
         }
     }
     
-    // async SignInPhoneCustomer(req, res){
-    //     try {
-    //         const {value, error} = SignInNumberCustomerValidator(req.body)
-    //         if(error){
-    //             return resError(res, error)
-    //         }
-    //         const customer = await Customer.findOne({phoneNumber: value.phoneNumber})
-    //         if(!customer){
-    //             return resError(res, 'Customer not found', 404)
-    //         }
-    //         const otp = generateOTP()
-    //         cache.set(value.phoneNumber, otp, 120)
-    //         await sendSMS(value.phoneNumber, otp)
-    //         return resSuccess(res, {})
-    //     } catch (error) {
-    //         return resError(res, error)
-    //     }
-    // }
-
     async newAccessToken(req, res){
         try {
             const refreshToken = req.cookies?.refreshTokenCustomer
@@ -123,6 +104,8 @@ export class CustomerController {
             return resError(res, error)
         }
     }
+
+    
 
     async confirmSignIn(req, res){
         try {

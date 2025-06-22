@@ -28,6 +28,61 @@ export class AdminController {
             return resError(res, error)
         }
     } 
+
+       
+    async confirmSignIn(req, res){
+        try {
+            const {value, error} = createValidator(req.body)
+            if(error){
+                return resError(res, error)
+            }
+            const customer = await Customer.findOne({email: value.email})
+            if(!customer){
+                 return resError(res, 'Customer not found', 404)
+            }
+            const cacheOTP = cache.get(value.email)
+            if(!cacheOTP || cacheOTP != value.otp){
+                return resError(res, 'OTP expired', 400)
+            }
+            const payload = { id: customer._id}
+            const accessToken = await token.generateAccessToken(payload)
+            const refreshToken = await token.generateRefreshToken(payload)
+            res.cookie('refreshTokenCustomer', refreshToken, {
+                httpOnly: true,
+                secure: true,
+                maxAge: 30 * 24 * 60 * 60 * 1000
+            });
+            return resSuccess(res, {
+                data: customer,
+                token: accessToken
+            }, 201);
+        } catch (error) { 
+            return resError(res, error)
+        }
+    }
+    
+    async logOut(req, res){
+        try {
+            const refreshToken = req.cookies?.refreshTokenCustomer
+            if(!refreshToken){
+                return resError(res, 'Refresh Token expired', 400)
+            }
+            const decodedToken = await token.verifyToken(refreshToken, config.REFRESH_TOKEN_KEY)
+            if(!decodedToken){
+                return resError(res, 'Invalid token', 400)
+            }
+            const customer = await Customer.findOne({ _id: decodedToken.id})
+            if(!customer){
+                return resError(res, 'Customer not found', 404)
+            }
+                res.clearCookie('refreshTokenCustomer')
+                return resSuccess(res, {})
+            } catch (error) {
+                return resError(res, error)
+            }
+        }
+        
+
     async getAllAdmins(_, res){
         try {
             const admin = await Admin.find()

@@ -1,15 +1,15 @@
 import { Router } from "express";
 import { AdminController } from "../controller/admin.controller.js";
 
-const router = Router()
-const controller = new AdminController()
+export const router = Router()
+export const controller = new AdminController()
 
 router
-    .post('/', controller.creatAdmin)
+    .post('/', logMid, controller.createAdmin)
     .get('/', controller.getAllAdmins)
     .get('/:id', controller.getAdminById)
     .patch('/:id', controller.updateAdminById)
-    .delete('/:id', controller.deleteAdminById)
+    .delete('/:id', controller.deleteAdminById);
 
 
 export default router
