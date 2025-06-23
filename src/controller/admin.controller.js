@@ -4,11 +4,13 @@ import { updateValidator, createValidator } from '../validation/admin.validation
 import { Crypto } from '../utils/encrypt-dcrypt.js'
 import Admin  from '../models/admin.model.js'
 import { isValidObjectId } from 'mongoose'
+import { Token } from '../utils/token-service.js'
 
+const token = new Token()
 const crypto = new Crypto()
 
 export class AdminController {
-    async creatAdmin(req, res){
+    async createAdmin(req, res){
         try {
             const {value, error} = createValidator(req.body)
             if(error){
@@ -23,47 +25,80 @@ export class AdminController {
                 ...value,
                 hashedPassword
             })
-            return resSuccess(res, admin)
+            const payload = { id: admin._id , role: admin.role}
+            const accessToken = await token.generateAccessToken(payload)
+            const refreshToken = await token.generateRefreshToken(payload)
+            res.cookie('refreshTokenAdmin', refreshToken, {
+                httpOnly: true,
+                secure: true,
+                maxAge: 30 * 24 * 60 * 60 * 1000
+            });
+            return resSuccess(res, {
+                data: admin,
+                token: accessToken
+            }, 201);
+            
         } catch (error) {
             return resError(res, error)
         }
     } 
 
        
-    async confirmSignIn(req, res){
+    async SignInAdmin(req, res){
         try {
             const {value, error} = createValidator(req.body)
             if(error){
                 return resError(res, error)
             }
-            const customer = await Customer.findOne({email: value.email})
-            if(!customer){
-                 return resError(res, 'Customer not found', 404)
+            const admin = await Admin.findOne({username: value.username})
+            if(!admin){
+                return resError(res, 'Admin not found', 404)
             }
-            const cacheOTP = cache.get(value.email)
-            if(!cacheOTP || cacheOTP != value.otp){
-                return resError(res, 'OTP expired', 400)
-            }
-            const payload = { id: customer._id}
+            const payload = { id: admin._id , role: admin.role}
             const accessToken = await token.generateAccessToken(payload)
             const refreshToken = await token.generateRefreshToken(payload)
-            res.cookie('refreshTokenCustomer', refreshToken, {
+            res.cookie('refreshTokenAdmin', refreshToken, {
                 httpOnly: true,
                 secure: true,
                 maxAge: 30 * 24 * 60 * 60 * 1000
             });
             return resSuccess(res, {
-                data: customer,
+                data: admin,
                 token: accessToken
             }, 201);
+            
         } catch (error) { 
             return resError(res, error)
         }
     }
     
+    async newAccessToken(req, res){
+            try {
+                const refreshToken = req.cookies?.refreshTokenAdmin
+                if(!refreshToken){
+                    return resError(res, 'Refresh token expired', 400)
+                }
+                const decodedToken = await token.verifyToken(refreshToken, config.REFRESH_TOKEN_KEY)
+                if(!decodedToken){
+                    return resError(res, 'Invalid token', 400)
+                }
+                const admin = await Admin.findOne({_id: decodedToken.id})
+                if(!admin){
+                    return resError(res, 'Admin not found', 404)
+                }
+                const payload = { id: admin._id, role: admin.role}
+                const accessToken = await token.generateAccessToken(payload)
+                return resSuccess(res, {
+                    token: accessToken
+                })
+            } catch (error) {
+                return resError(res, error)
+            }
+        }
+
     async logOut(req, res){
         try {
-            const refreshToken = req.cookies?.refreshTokenCustomer
+            const refreshToken = req.cookies?.refreshTokenAdmin
             if(!refreshToken){
                 return resError(res, 'Refresh Token expired', 400)
             }
@@ -71,16 +106,16 @@ export class AdminController {
             if(!decodedToken){
                 return resError(res, 'Invalid token', 400)
             }
-            const customer = await Customer.findOne({ _id: decodedToken.id})
-            if(!customer){
-                return resError(res, 'Customer not found', 404)
+            const admin = await Admin.findOne({ _id: decodedToken.id})
+            if(!admin){
+                return resError(res, 'Admin not found', 404)
             }
-                res.clearCookie('refreshTokenCustomer')
-                return resSuccess(res, {})
-            } catch (error) {
-                return resError(res, error)
-            }
+            res.clearCookie('refreshTokenAdmin')
+            return resSuccess(res, {})
+        } catch (error) {
+            return resError(res, error)
         }
+    }
         
 
     async getAllAdmins(_, res){
