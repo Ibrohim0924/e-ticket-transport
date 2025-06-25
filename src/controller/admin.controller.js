@@ -1,6 +1,6 @@
 import { resError } from '../helper/error-res.js'
 import { resSuccess } from '../helper/success-res.js'
-import { updateValidator, createValidator } from '../validation/admin.validation.js'
+import { updateValidator, createValidator, SigninValidator } from '../validation/admin.validation.js'
 import { Crypto } from '../utils/encrypt-dcrypt.js'
 import Admin  from '../models/admin.model.js'
 import { isValidObjectId } from 'mongoose'
@@ -46,13 +46,17 @@ export class AdminController {
        
     async SignInAdmin(req, res){
         try {
-            const {value, error} = createValidator(req.body)
+            const {value, error} = SigninValidator(req.body)
             if(error){
                 return resError(res, error)
             }
             const admin = await Admin.findOne({username: value.username})
             if(!admin){
-                return resError(res, 'Admin not found', 404)
+                return resError(res, 'Username or Password incorrect', 400)
+            }
+            const securePass = await crypto.decrypt (value.password, admin.hashedPassword)
+            if(!securePass){
+                return resError(res, 'Username or Password incorrect', 400)
             }
             const payload = { id: admin._id , role: admin.role}
             const accessToken = await token.generateAccessToken(payload)
@@ -82,7 +86,8 @@ export class AdminController {
                 if(!decodedToken){
                     return resError(res, 'Invalid token', 400)
                 }
-                const admin = await Admin.findOne({_id: decodedToken.id})
+                console.log(decodedToken)
+                const admin = await Admin.findById({decodedToken})
                 if(!admin){
                     return resError(res, 'Admin not found', 404)
                 }
@@ -116,7 +121,8 @@ export class AdminController {
             return resError(res, error)
         }
     }
-        
+    
+    
 
     async getAllAdmins(_, res){
         try {

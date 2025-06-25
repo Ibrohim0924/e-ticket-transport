@@ -14,8 +14,8 @@ router
     .post('/logout', AuthGuard, controller.logOut)
     .get('/', AuthGuard, RolesGuard(['superadmin']), controller.getAllAdmins)
     .get('/:id', AuthGuard, SelfGuard, controller.getAdminById)
-    .patch('/:id', controller.updateAdminById)
-    .delete('/:id', controller.deleteAdminById)
+    .patch('/:id',AuthGuard, RolesGuard(['superadmin']),controller.updateAdminById)
+    .delete('/:id',AuthGuard, RolesGuard(['superadmin']), controller.deleteAdminById)
 
 
 export default router
