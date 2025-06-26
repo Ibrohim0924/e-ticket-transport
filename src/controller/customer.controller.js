@@ -4,10 +4,10 @@ import { resSuccess } from "../helper/success-res.js";
 import { SignInEmailCustomerValidator, updateCustomerValidator,SignInNumberCustomerValidator, SignUpCustomerValidator, ConfirmSignInCustomerValidator } from "../validation/customer.validation.js";
 import { Token } from "../utils/token-service.js";
 import config from "../config/index.js";
+import { isValidObjectId } from "mongoose";
 import { generateOTP } from "../helper/generate-otp.js"; 
 import NodeCache from "node-cache";
-import { transporter } from "../helper/sendMail.js";
-import {sendSMS} from '../helper/sendSMS.js'
+import { transporter } from "../helper/sendMail.js"
  
 const cache = new NodeCache()
 const token = new Token()
@@ -105,8 +105,6 @@ export class CustomerController {
         }
     }
 
-    
-
     async confirmSignIn(req, res){
         try {
             const {value, error} = ConfirmSignInCustomerValidator(req.body)
@@ -138,6 +136,51 @@ export class CustomerController {
         }
     }
 
+    async getAllCustomers(_, res){
+        try {
+            const customer = await Customer.find()
+            return resSuccess(res, customer)
+        } catch (error) {
+            return resError(res, error)
+        }
+    }
+    
+    async getCustomerById(req, res){
+        try {
+            const customer = await CustomerController.findCustomerById(res, req.params.id)
+            return resSuccess(res, customer)
+        } catch (error) {
+            return resError(res, error)
+        }
+    }
+    
+    async updateCustomerById(req, res){
+        try {
+            const id = req.params.id
+            const { value, error} = updateCustomerValidator(req.body)
+            if(error){
+                return resError(res, error, 422)
+            }    
+            const customer = await Customer.findByIdAndUpdate(id, {
+                ...value
+            }, {new: true})
+            return resSuccess(res, customer)
+        } catch (error) {
+            return resError(res, error)
+        }
+    }
+    
+    async deleteCustomerById(req, res){
+        try {
+            const id = req.params.id
+            await CustomerController.findCustomerById(res, id)
+            await Customer.findByIdAndDelete(id)
+            return resSuccess(res, 'Customer deleted successfully')
+        } catch (error) {
+            return resError(res, error)
+        }
+    }
+    
     async logOut(req, res){
         try {
             const refreshToken = req.cookies?.refreshTokenCustomer
@@ -159,4 +202,19 @@ export class CustomerController {
         }
     }
     
+    
+    static async findCustomerById(res, id){
+        try {
+            if(!isValidObjectId(id)){
+                return resError(res, 'Invalid ObjectId', 400)
+            }
+            const customer = await Customer.findById(id)
+            if(!customer){
+                return resError(res, 'Customer not found', 404)
+            }
+            return customer
+            } catch (error) {
+            return resError(res, error)
+        }
+    }
 }

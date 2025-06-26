@@ -8,8 +8,11 @@ router
     .post('/signup', controller.SignUp)
     .post('/signinemail', controller.SignInEmailCustomer)
     .post('/confirm-signin', controller.confirmSignIn)
-    // .post('/signinphone', controller.SignInPhoneCustomer)
     .post('/token', controller.newAccessToken)
     .post('/logout', controller.logOut)
+    .get('/', controller.getAllCustomers)
+    .get('/:id', controller.getCustomerById)
+    .patch('/:id', controller.updateCustomerById)
+    .delete('/:id', controller.deleteCustomerById)
 
 export default router
